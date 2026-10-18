@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mosy Math Time Adventure</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color-1: #a7f3d0; /* Mint */
+            --bg-color-2: #bae6fd; /* Light Blue */
+            --bg-color-3: #fbcfe8; /* Light Pink */
+            --bg-color-4: #fef08a; /* Light Yellow */
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, var(--bg-color-1), var(--bg-color-2), var(--bg-color-3), var(--bg-color-4));
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            touch-action: manipulation;
+            overflow: hidden; 
+            color: #1e293b;
+        }
+
+        .bg-bubbles {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            overflow: hidden; z-index: 0; pointer-events: none;
+        }
+        .bubble {
+            position: absolute;
+            bottom: -100px;
+            background-color: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            animation: floatUp 10s infinite ease-in;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-120vh) scale(1.5) rotate(180deg); opacity: 0; }
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .btn-premium {
+            position: relative;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 900;
+            border-radius: 2rem;
+            border: 4px solid rgba(255,255,255,0.4);
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-premium:active {
+            transform: translateY(6px) scale(0.98);
+            box-shadow: 0 0px 0 transparent, 0 5px 10px -3px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        .btn-clock-card {
+            background: rgba(255, 255, 255, 0.95);
+            border: 4px solid #bae6fd;
+            border-radius: 2.5rem;
+            box-shadow: 0 15px 0 #93c5fd, 0 20px 25px -5px rgba(0,0,0,0.2);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-clock-card:active {
+            transform: translateY(15px) scale(0.98);
+            box-shadow: 0 0px 0 transparent, 0 5px 10px -3px rgba(0, 0, 0, 0.2) !important;
+        }
+        .btn-clock-card:hover {
+            background: #ffffff;
+            border-color: #93c5fd;
+        }
+
+        .btn-blue { background: linear-gradient(to bottom, #60a5fa, #3b82f6); color: white; box-shadow: 0 8px 0 #2563eb, 0 15px 20px -3px rgba(0, 0, 0, 0.3); text-shadow: 2px 2px 0px rgba(0,0,0,0.2); }
+        .btn-green { background: linear-gradient(to bottom, #4ade80, #22c55e); color: white; box-shadow: 0 8px 0 #16a34a, 0 15px 20px -3px rgba(0, 0, 0, 0.3); text-shadow: 2px 2px 0px rgba(0,0,0,0.2); }
+        .btn-red { background: linear-gradient(to bottom, #f87171, #ef4444); color: white; box-shadow: 0 8px 0 #dc2626, 0 15px 20px -3px rgba(0, 0, 0, 0.3); text-shadow: 2px 2px 0px rgba(0,0,0,0.2); }
+        .btn-yellow { background: linear-gradient(to bottom, #fde047, #f59e0b); color: white; box-shadow: 0 8px 0 #d97706, 0 15px 20px -3px rgba(0, 0, 0, 0.3); text-shadow: 2px 2px 0px rgba(0,0,0,0.2); }
+
+        .float { animation: float 4s ease-in-out infinite; }
+        .float-delayed { animation: float 4s ease-in-out 2s infinite; }
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            25% { transform: translateY(-10px) rotate(-2deg); }
+            50% { transform: translateY(-15px) rotate(0deg); }
+            75% { transform: translateY(-10px) rotate(2deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        .pop-in { animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .pop-button {
+            opacity: 0;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes popIn { 0% { transform: scale(0.3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        .slide-out-left { animation: slideOutLeft 0.4s ease-in forwards; }
+        @keyframes slideOutLeft { to { transform: translateX(-150%); opacity: 0; } }
+
+        .slide-in-right { animation: slideInRight 0.4s ease-out forwards; }
+        @keyframes slideInRight { from { transform: translateX(150%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .game-board {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 2.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1), inset 0 -4px 0 rgba(0,0,0,0.05);
+            border: 4px solid white;
+            backdrop-filter: blur(10px);
+        }
+
+        .speech-bubble {
+            position: relative;
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1rem 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 4px solid #f8fafc;
+            font-weight: 900;
+            font-size: 2rem;
+            text-align: center;
+            color: #334155;
+            z-index: 30;
+        }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border: 15px solid transparent;
+            border-top-color: white;
+            border-bottom: 0;
+            margin-left: -15px;
+            z-index: 2;
+        }
+
+        .top-bar {
+            background: rgba(255,255,255,0.95);
+            border-radius: 999px;
+            padding: 0.75rem 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            border: 3px solid white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 900;
+            z-index: 40;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center relative">
+
+    <div class="bg-bubbles">
+        <div class="bubble" style="width: 80px; height: 80px; left: 10%; animation-duration: 12s;"></div>
+        <div class="bubble" style="width: 40px; height: 40px; left: 30%; animation-duration: 9s; animation-delay: 2s;"></div>
+        <div class="bubble" style="width: 60px; height: 60px; left: 60%; animation-duration: 14s; animation-delay: 1s;"></div>
+        <div class="bubble" style="width: 120px; height: 120px; left: 85%; animation-duration: 16s; animation-delay: 4s;"></div>
+        <div class="bubble" style="width: 50px; height: 50px; left: 50%; animation-duration: 11s; animation-delay: 6s;"></div>
+    </div>
+
+    <!-- Background Characters (Always present, positioned at bottom corners) -->
+    <div id="char-mia" class="absolute bottom-[-10px] left-0 md:left-4 w-32 md:w-44 float z-10 pointer-events-none drop-shadow-2xl">
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+            <path d="M 50,100 C 50,30 150,30 150,100 C 160,170 140,190 100,190 C 60,190 40,170 50,100 Z" fill="#1e293b" />
+            <path d="M 65,105 C 65,55 135,55 135,105 C 140,160 120,185 100,185 C 80,185 60,160 65,105 Z" fill="#ffffff" />
+            <circle cx="85" cy="85" r="12" fill="#000" />
+            <circle cx="88" cy="81" r="4" fill="#fff" />
+            <circle cx="115" cy="85" r="12" fill="#000" />
+            <circle cx="118" cy="81" r="4" fill="#fff" />
+            <ellipse cx="65" cy="100" rx="10" ry="6" fill="#f472b6" opacity="0.6"/>
+            <ellipse cx="135" cy="100" rx="10" ry="6" fill="#f472b6" opacity="0.6"/>
+            <path d="M 90,100 Q 100,115 110,100 Q 100,125 90,100 Z" fill="#f59e0b" />
+            <path d="M 55,105 C 20,130 10,170 25,180 C 45,190 65,140 68,130 Z" fill="#1e293b" />
+            <path d="M 145,105 C 180,130 190,170 175,180 C 155,190 135,140 132,130 Z" fill="#1e293b" />
+            <path d="M 75,185 C 55,185 45,210 70,210 C 95,210 95,190 75,185 Z" fill="#f59e0b" />
+            <path d="M 125,185 C 145,185 155,210 130,210 C 105,210 105,190 125,185 Z" fill="#f59e0b" />
+            <g transform="translate(60, 30) rotate(-15)">
+                <path d="M 20,20 L -10,-5 L -15,35 Z" fill="#ec4899" />
+                <path d="M 20,20 L 50,-5 L 55,35 Z" fill="#ec4899" />
+                <circle cx="20" cy="20" r="12" fill="#be185d" />
+            </g>
+        </svg>
+    </div>
+
+    <div id="char-mosy" class="absolute bottom-[-10px] right-0 md:right-4 w-32 md:w-44 float-delayed z-10 pointer-events-none drop-shadow-2xl">
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+            <path d="M 50,100 C 50,30 150,30 150,100 C 160,170 140,190 100,190 C 60,190 40,170 50,100 Z" fill="#1e293b" />
+            <path d="M 65,105 C 65,55 135,55 135,105 C 140,160 120,185 100,185 C 80,185 60,160 65,105 Z" fill="#ffffff" />
+            <circle cx="85" cy="85" r="12" fill="#000" />
+            <circle cx="88" cy="81" r="4" fill="#fff" />
+            <circle cx="115" cy="85" r="12" fill="#000" />
+            <circle cx="118" cy="81" r="4" fill="#fff" />
+            <ellipse cx="65" cy="100" rx="10" ry="6" fill="#60a5fa" opacity="0.6"/>
+            <ellipse cx="135" cy="100" rx="10" ry="6" fill="#60a5fa" opacity="0.6"/>
+            <path d="M 90,100 Q 100,115 110,100 Q 100,125 90,100 Z" fill="#f59e0b" />
+            <path d="M 55,105 C 20,130 10,170 25,180 C 45,190 65,140 68,130 Z" fill="#1e293b" />
+            <path d="M 145,105 C 180,130 190,170 175,180 C 155,190 135,140 132,130 Z" fill="#1e293b" />
+            <path d="M 75,185 C 55,185 45,210 70,210 C 95,210 95,190 75,185 Z" fill="#f59e0b" />
+            <path d="M 125,185 C 145,185 155,210 130,210 C 105,210 105,190 125,185 Z" fill="#f59e0b" />
+            <g transform="translate(100, 35)">
+                <path d="M -40,10 C -40,-25 40,-25 40,10 Z" fill="#3b82f6" />
+                <rect x="-45" y="10" width="90" height="15" rx="7" fill="#2563eb" />
+                <circle cx="0" cy="-20" r="14" fill="#93c5fd" />
+            </g>
+        </svg>
+    </div>
+
+    <div class="w-full h-full max-w-7xl mx-auto flex flex-col z-20 relative px-4 md:px-8 py-4">
+        
+        <!-- Global Game Title for Game Screen (Only visible during play) -->
+        <h1 id="game-title-display" class="hidden text-center text-2xl md:text-4xl font-black text-blue-500 mb-3 uppercase tracking-widest drop-shadow-md" style="text-shadow: 2px 2px 0px white, -2px -2px 0px white, 2px -2px 0px white, -2px 2px 0px white;">Mosy Math <span class="text-pink-500">Time Adventure</span></h1>
+
+        <!-- Top HUD (Heads Up Display) -->
+        <div id="hud" class="top-bar w-full max-w-5xl mx-auto mb-4 hidden flex-wrap justify-center md:justify-between gap-3">
+            <div class="flex items-center gap-2 bg-white bg-opacity-90 px-4 py-1 rounded-full border-2 border-yellow-200 shadow-inner">
+                <span id="player-avatar-display" class="text-2xl md:text-3xl drop-shadow-md">🐧</span>
+                <span id="player-name-display" class="text-lg md:text-xl font-bold text-gray-700 max-w-[100px] truncate uppercase">Player</span>
+                <div class="h-6 w-px bg-gray-300 mx-1"></div>
+                <span class="text-2xl md:text-3xl drop-shadow-md">⭐</span>
+                <span id="score-display" class="text-2xl md:text-3xl text-yellow-500 font-black" style="text-shadow: 1px 1px 0 rgba(0,0,0,0.1);">0</span>
+            </div>
+            <div id="timer-display" class="hidden flex items-center gap-2 bg-red-50 px-4 py-1 rounded-full border-2 border-red-200 shadow-inner">
+                <span class="text-2xl drop-shadow-sm">⏱️</span>
+                <span id="timer-value" class="text-2xl font-black text-red-500">10</span>
+            </div>
+            <div class="text-xl md:text-2xl text-blue-600 uppercase tracking-widest bg-blue-50 px-6 py-2 rounded-full border-2 border-blue-200">
+                Stage <span id="stage-display">1</span>/10
+            </div>
+            <div class="flex items-center gap-1 text-2xl drop-shadow-md">
+                 <span id="lives-display">❤️❤️❤️</span>
+            </div>
+        </div>
+
+        <div class="flex-grow w-full relative flex flex-col items-center justify-center">
+
+            <!-- Profile Screen -->
+            <div id="profile-screen" class="game-board w-full max-w-2xl p-8 md:p-12 text-center flex flex-col items-center absolute z-50 pop-in">
+                <h1 class="text-5xl md:text-6xl font-black text-blue-500 mb-4 leading-tight drop-shadow-md" style="text-shadow: 3px 3px 0px rgba(0,0,0,0.1);">Mosy Math<br><span class="text-3xl md:text-4xl text-pink-500 tracking-wider">Time Adventure</span></h1>
+                
+                <div id="best-score-container" class="hidden bg-gradient-to-r from-yellow-200 to-yellow-100 text-yellow-700 px-8 py-2 rounded-full font-black text-2xl mb-8 shadow-md border-2 border-yellow-300 flex items-center gap-2">
+                    🏆 Best Score: <span id="best-score-display">0</span>
+                </div>
+
+                <p class="text-xl text-gray-600 mb-4 font-bold">Choose your Avatar</p>
+                <div class="flex gap-4 mb-8">
+                    <button onclick="selectIcon(this, '🐧')" class="avatar-btn ring-4 ring-blue-500 bg-blue-100 text-5xl md:text-6xl p-4 rounded-3xl transition-transform hover:scale-110 drop-shadow-sm">🐧</button>
+                    <button onclick="selectIcon(this, '🎀')" class="avatar-btn border-4 border-gray-200 bg-gray-50 text-5xl md:text-6xl p-4 rounded-3xl transition-transform hover:scale-110 drop-shadow-sm">🎀</button>
+                    <button onclick="selectIcon(this, '🐥')" class="avatar-btn border-4 border-gray-200 bg-gray-50 text-5xl md:text-6xl p-4 rounded-3xl transition-transform hover:scale-110 drop-shadow-sm">🐥</button>
+                    <button onclick="selectIcon(this, '🐸')" class="avatar-btn border-4 border-gray-200 bg-gray-50 text-5xl md:text-6xl p-4 rounded-3xl transition-transform hover:scale-110 drop-shadow-sm">🐸</button>
+                </div>
+
+                <input type="text" id="player-name-input" class="w-full max-w-sm text-center text-3xl font-bold p-4 rounded-full border-4 border-blue-200 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 mb-8 text-gray-700 placeholder-gray-300 transition-all shadow-inner" placeholder="Enter Name" maxlength="10">
+
+                <button onclick="goToDifficulty()" class="btn-premium btn-blue text-3xl py-5 px-12 w-full max-w-sm group">
+                    <span class="group-hover:scale-110 transition-transform block">Next ➔</span>
+                </button>
+            </div>
+            
+            <!-- Start Screen (Difficulty) -->
+            <div id="start-screen" class="game-board w-full max-w-2xl p-8 md:p-12 text-center flex flex-col items-center absolute z-50 hidden">
+                <button onclick="goBackToProfile()" class="absolute top-4 left-4 md:top-6 md:left-6 text-gray-400 hover:text-gray-600 font-bold text-lg flex items-center gap-1 transition-colors">
+                    <span>⬅️</span> Back
+                </button>
+                <h1 class="text-4xl md:text-5xl font-black text-blue-500 mb-2 leading-tight drop-shadow-md mt-6 md:mt-0" style="text-shadow: 2px 2px 0px rgba(0,0,0,0.1);">Mosy Math<br><span class="text-2xl md:text-3xl text-pink-500 tracking-wider">Time Adventure</span></h1>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-500 mb-4 drop-shadow-sm mt-2">Select Difficulty</h2>
+                <p class="text-xl text-gray-600 mb-8 font-bold bg-gray-100 px-6 py-2 rounded-full border-2 border-gray-200">10 Questions to Win!</p>
+                
+                <div class="flex flex-col gap-4 w-full max-w-sm">
+                    <button onclick="startGame('easy')" class="btn-premium btn-green py-5 text-2xl md:text-3xl group">
+                        <span class="group-hover:scale-110 transition-transform block">Easy (No Timer)</span>
+                    </button>
+                    <button onclick="startGame('normal')" class="btn-premium btn-blue py-5 text-2xl md:text-3xl group">
+                        <span class="group-hover:scale-110 transition-transform block">Normal (10s)</span>
+                    </button>
+                    <button onclick="startGame('hard')" class="btn-premium btn-red py-5 text-2xl md:text-3xl group">
+                        <span class="group-hover:scale-110 transition-transform block">Hard (5s)</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="game-screen" class="w-full h-full flex flex-col items-center justify-center absolute hidden z-40">
+                <div class="speech-bubble pop-in max-w-2xl w-full mx-auto mb-4 md:mb-6 z-20" id="question-text">
+                    What time is it?
+                </div>
+
+                <div id="question-board" class="game-board w-full max-w-5xl p-4 md:p-8 relative z-20 transition-all duration-300 mb-4 md:mb-8 hidden">
+                    <div id="question-container" class="w-full flex flex-col items-center justify-center">
+                        <!-- Clocks go here -->
+                    </div>
+                </div>
+
+                <div id="answer-container" class="w-full z-20 transition-all duration-300 pb-10 px-2">
+                    <!-- Buttons go here -->
+                </div>
+            </div>
+
+            <!-- End Screen -->
+            <div id="end-screen" class="game-board w-full max-w-2xl p-8 md:p-12 text-center flex flex-col items-center absolute z-50 hidden">
+                <h1 class="text-2xl md:text-3xl font-black text-blue-500 mb-2 leading-tight drop-shadow-md" style="text-shadow: 2px 2px 0px rgba(0,0,0,0.1);">Mosy Math <span class="text-pink-500">Time Adventure</span></h1>
+                <h2 id="end-title" class="text-3xl md:text-4xl font-black text-gray-500 mb-2 uppercase tracking-widest drop-shadow-sm mt-2">You Won!</h2>
+                <h3 id="end-player-name" class="text-7xl md:text-8xl font-black text-blue-600 mb-4 drop-shadow-lg uppercase tracking-wider" style="text-shadow: 4px 4px 0px rgba(0,0,0,0.1);">Player!</h3>
+                <div class="text-8xl mb-6 float" id="end-avatar">⭐</div>
+                
+                <div class="bg-gray-100 w-full rounded-3xl p-6 mb-8 border-4 border-gray-200 relative">
+                    <p class="text-2xl text-gray-500 font-bold mb-1 uppercase tracking-wider">Your Score</p>
+                    <p id="final-score" class="text-7xl font-black text-blue-500 mb-2 drop-shadow-lg">0</p>
+                    
+                    <div class="bg-yellow-100 border-2 border-yellow-300 rounded-full py-2 px-6 inline-block mx-auto mt-2 shadow-inner">
+                        <p class="text-xl text-yellow-700 font-black uppercase tracking-wide"><span id="best-score-label">Previous Best:</span> <span id="end-best-score">0</span></p>
+                    </div>
+
+                    <div id="new-record-badge" class="hidden mx-auto bg-yellow-400 text-yellow-900 font-black px-4 py-1 rounded-full text-sm uppercase tracking-widest animate-bounce w-max border-2 border-yellow-500 shadow-md absolute -top-4 -right-2 md:right-4 rotate-12">
+                        New Record! 🎉
+                    </div>
+                </div>
+                
+                <div class="flex flex-col md:flex-row gap-4 w-full">
+                    <button onclick="resetGame()" class="btn-premium btn-blue text-2xl py-5 px-6 flex-1 group">
+                        <span class="group-hover:scale-110 transition-transform block">Play Again</span>
+                    </button>
+                    <button onclick="goBackToProfile()" class="btn-premium btn-yellow text-2xl py-5 px-6 flex-1 group">
+                        <span class="group-hover:scale-110 transition-transform block">Change Player</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- AUDIO SYSTEM (Tone.js) ---
+        let audioInitialized = false;
+        const synths = {};
+
+        async function initAudio() {
+            if (!audioInitialized) {
+                await Tone.start();
+                
+                synths.click = new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 2, oscillator: { type: 'sine' } }).toDestination();
+                synths.click.volume.value = -12;
+
+                synths.correct = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "triangle" }, envelope: { attack: 0.05, decay: 0.1, sustain: 0.1, release: 1 } }).toDestination();
+                synths.correct.volume.value = -8;
+
+                synths.wrong = new Tone.Synth({ oscillator: { type: "sawtooth" }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.2, release: 1 } }).toDestination();
+                synths.wrong.volume.value = -8;
+
+                synths.tick = new Tone.PluckSynth().toDestination();
+                synths.tick.volume.value = -5;
+
+                synths.win = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "square" }, envelope: { attack: 0.1, decay: 0.2, sustain: 0.5, release: 2 } }).toDestination();
+                synths.win.volume.value = -10;
+
+                audioInitialized = true;
+            }
+        }
+
+        // Initialize audio on the first user interaction anywhere on the screen
+        document.addEventListener('click', initAudio, { once: true });
+        document.addEventListener('touchstart', initAudio, { once: true });
+
+        function playSound(type) {
+            if (!audioInitialized) return;
+            const now = Tone.now();
+            try {
+                switch(type) {
+                    case 'click': synths.click.triggerAttackRelease("C5", "32n"); break;
+                    case 'correct': synths.correct.triggerAttackRelease(["C5", "E5", "G5", "C6"], "8n", now); break;
+                    case 'wrong': 
+                        synths.wrong.triggerAttackRelease("Eb3", "8n", now);
+                        synths.wrong.frequency.rampTo("C3", 0.4); 
+                        break;
+                    case 'tick': synths.tick.triggerAttackRelease("C5", "32n"); break;
+                    case 'win':
+                        synths.win.triggerAttackRelease(["C4", "E4", "G4"], "8n", now);
+                        synths.win.triggerAttackRelease(["F4", "A4", "C5"], "8n", now + 0.2);
+                        synths.win.triggerAttackRelease(["G4", "B4", "D5"], "8n", now + 0.4);
+                        synths.win.triggerAttackRelease(["C5", "E5", "G5", "C6"], "2n", now + 0.6);
+                        break;
+                    case 'lose':
+                        synths.wrong.triggerAttackRelease("G2", "4n", now);
+                        synths.wrong.triggerAttackRelease("Eb2", "4n", now + 0.3);
+                        synths.wrong.triggerAttackRelease("C2", "1n", now + 0.6);
+                        break;
+                }
+            } catch(e) { console.error("Audio error:", e); }
+        }
+
+        // Player Profile State
+        let playerName = "Player";
+        let playerIcon = "🐧";
+        let bestScore = 0;
+
+        let currentLevel = 0;
+        let score = 0;
+        let lives = 3;
+        let correctAnswer = null;
+        let isAnimating = false;
+        
+        let difficultyMode = 'easy';
+        let timerInterval = null;
+        let timeLeft = 0;
+        const maxQuestions = 10;
+
+        // Curriculum Levels Definition
+        const levels = [
+            { type: 'standard', title: 'What time is it?', minDivisor: 15 }, // Q1: 15 min increments
+            { type: 'standard', title: 'What time is it?', minDivisor: 15 }, // Q2
+            { type: 'which', title: 'Which clock shows...', minDivisor: 15 }, // Q3
+            { type: 'duration', title: 'How many minutes passed?', minDivisor: 15 }, // Q4
+            { type: 'standard', title: 'What time is it?', minDivisor: 5 }, // Q5: 5 min increments
+            { type: 'standard', title: 'What time is it?', minDivisor: 5 }, // Q6
+            { type: 'which', title: 'Which clock shows...', minDivisor: 5 }, // Q7
+            { type: 'duration', title: 'How many minutes passed?', minDivisor: 5 }, // Q8
+            { type: 'which', title: 'Which clock shows...', minDivisor: 5 }, // Q9
+            { type: 'standard', title: 'What time is it?', minDivisor: 1 } // Q10: Challenge! 1 min increments
+        ];
+
+        function selectIcon(element, icon) {
+            playSound('click');
+            playerIcon = icon;
+            document.querySelectorAll('.avatar-btn').forEach(btn => {
+                btn.classList.remove('ring-4', 'ring-blue-500', 'bg-blue-100');
+                btn.classList.add('border-4', 'border-gray-200', 'bg-gray-50');
+            });
+            element.classList.add('ring-4', 'ring-blue-500', 'bg-blue-100');
+            element.classList.remove('border-4', 'border-gray-200', 'bg-gray-50');
+        }
+
+        function goToDifficulty() {
+            playSound('click');
+            const input = document.getElementById('player-name-input').value.trim();
+            if (input) {
+                playerName = input;
+            }
+            
+            document.getElementById('profile-screen').classList.add('hidden');
+            document.getElementById('profile-screen').classList.remove('pop-in');
+            
+            const startScreen = document.getElementById('start-screen');
+            startScreen.classList.remove('hidden');
+            startScreen.classList.add('pop-in');
+        }
+
+        function goBackToProfile() {
+            playSound('click');
+            if (bestScore > 0) {
+                document.getElementById('best-score-container').classList.remove('hidden');
+                document.getElementById('best-score-display').innerText = bestScore;
+            }
+
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('pop-in');
+            
+            const profileScreen = document.getElementById('profile-screen');
+            profileScreen.classList.remove('hidden');
+            profileScreen.classList.add('pop-in');
+        }
+
+        function createClockSVG(hours, minutes, size = '100%', extraClasses = '') {
+            const vbs = 400; 
+            const c = vbs / 2; 
+
+            const hrs = parseInt(hours) || 0;
+            const mins = parseInt(minutes) || 0;
+
+            const hourAngle = ((hrs % 12) + mins / 60) * 30 - 90;
+            const minAngle = mins * 6 - 90;
+            
+            const hourColors = {
+                1: '#fcd34d', 2: '#93c5fd', 3: '#fcd34d', 4: '#86efac', 
+                5: '#fdba74', 6: '#86efac', 7: '#fca5a5', 8: '#bae6fd', 
+                9: '#7dd3fc', 10: '#f9a8d4', 11: '#86efac', 12: '#fca5a5'
+            };
+
+            let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${vbs} ${vbs}" class="${extraClasses} drop-shadow-2xl overflow-visible" xmlns="http://www.w3.org/2000/svg">`;
+            
+            svg += `<defs>
+                <filter id="block-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="3" flood-opacity="0.25"/>
+                </filter>
+                <filter id="inner-shadow">
+                    <feOffset dx="0" dy="4"/>
+                    <feGaussianBlur stdDeviation="4" result="offset-blur"/>
+                    <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"/>
+                    <feFlood flood-color="black" flood-opacity="0.15" result="color"/>
+                    <feComposite operator="in" in="color" in2="inverse" result="shadow"/>
+                    <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+                </filter>
+            </defs>`;
+
+            // Thick Mint Rim (Outer)
+            svg += `<circle cx="${c}" cy="${c}" r="170" fill="#6ee7b7" />`;
+            // Outer Rim Drop Shadow manual implementation for better support
+            svg += `<circle cx="${c}" cy="${c}" r="170" fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="10" transform="translate(0, 8)"/>`;
+            // Inner rim detail
+            svg += `<circle cx="${c}" cy="${c}" r="150" fill="#34d399" />`;
+            // White Face
+            svg += `<circle cx="${c}" cy="${c}" r="140" fill="#f8fafc" filter="url(#inner-shadow)" />`;
+
+            // Minute Ticks (Simplified, inner only)
+            let ticks = '';
+            for (let i = 0; i < 60; i++) {
+                if (i % 5 !== 0) {
+                    const angle = (i * 6 - 90) * (Math.PI / 180);
+                    const x1 = c + 125 * Math.cos(angle);
+                    const y1 = c + 125 * Math.sin(angle);
+                    const x2 = c + 135 * Math.cos(angle);
+                    const y2 = c + 135 * Math.sin(angle);
+                    ticks += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round" />`;
+                }
+            }
+            svg += ticks;
+
+            // 3D Hour Blocks
+            let blocks = '';
+            for (let i = 1; i <= 12; i++) {
+                const angle = (i * 30 - 90) * (Math.PI / 180);
+                const blockR = 100; 
+                const x = c + blockR * Math.cos(angle);
+                const y = c + blockR * Math.sin(angle);
+                const rectSize = 46;
+                const color = hourColors[i];
+
+                blocks += `<g transform="translate(${x}, ${y})">
+                    <rect x="-${rectSize/2}" y="-${rectSize/2}" width="${rectSize}" height="${rectSize}" rx="12" fill="${color}" filter="url(#block-shadow)" />
+                    <rect x="-${rectSize/2 + 2}" y="-${rectSize/2 + 2}" width="${rectSize-4}" height="${rectSize/2}" rx="10" fill="#ffffff" opacity="0.5" />
+                    <text x="0" y="2" font-family="'Nunito', sans-serif" font-weight="900" font-size="26" fill="#fff" text-anchor="middle" dominant-baseline="central" style="text-shadow: 2px 2px 0px rgba(0,0,0,0.15);">${i}</text>
+                </g>`;
+            }
+            svg += blocks;
+
+            // Hands Calculation
+            const hLength = 75; // Short Hour Hand
+            const mLength = 125; // Long Minute Hand
+            
+            const hX = c + hLength * Math.cos(hourAngle * Math.PI / 180);
+            const hY = c + hLength * Math.sin(hourAngle * Math.PI / 180);
+            const mX = c + mLength * Math.cos(minAngle * Math.PI / 180);
+            const mY = c + mLength * Math.sin(minAngle * Math.PI / 180);
+
+            // MANUALLY DRAW SHADOWS FIRST (Fixes rendering bugs on iOS/Safari)
+            svg += `<line x1="${c}" y1="${c+5}" x2="${hX}" y2="${hY+5}" stroke="rgba(0,0,0,0.25)" stroke-width="20" stroke-linecap="round" />`;
+            svg += `<line x1="${c}" y1="${c+5}" x2="${mX}" y2="${mY+5}" stroke="rgba(0,0,0,0.25)" stroke-width="14" stroke-linecap="round" />`;
+
+            // HOUR HAND (Red)
+            svg += `<line x1="${c}" y1="${c}" x2="${hX}" y2="${hY}" stroke="#ef4444" stroke-width="20" stroke-linecap="round" />`;
+            // Hour Hand Inner Highlight
+            svg += `<line x1="${c}" y1="${c}" x2="${hX}" y2="${hY}" stroke="#fca5a5" stroke-width="6" stroke-linecap="round" />`;
+            
+            // MINUTE HAND (Blue) - Drawn on top
+            svg += `<line x1="${c}" y1="${c}" x2="${mX}" y2="${mY}" stroke="#3b82f6" stroke-width="14" stroke-linecap="round" />`;
+            // Minute Hand Inner Highlight
+            svg += `<line x1="${c}" y1="${c}" x2="${mX}" y2="${mY}" stroke="#93c5fd" stroke-width="4" stroke-linecap="round" />`;
+            
+            // Center Dots
+            svg += `<circle cx="${c}" cy="${c+4}" r="16" fill="rgba(0,0,0,0.25)" />`;
+            svg += `<circle cx="${c}" cy="${c}" r="16" fill="#facc15" />`;
+            svg += `<circle cx="${c}" cy="${c}" r="6" fill="#ca8a04" />`;
+
+            svg += `</svg>`;
+            return svg;
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            document.getElementById('timer-display').classList.add('hidden');
+            
+            if (difficultyMode === 'easy') return;
+            
+            timeLeft = difficultyMode === 'normal' ? 10 : 5;
+            document.getElementById('timer-value').innerText = timeLeft;
+            document.getElementById('timer-display').classList.remove('hidden');
+            document.getElementById('timer-display').classList.remove('shake', 'bg-red-200');
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer-value').innerText = timeLeft;
+                
+                if (timeLeft <= 3) {
+                    document.getElementById('timer-display').classList.add('shake', 'bg-red-200');
+                    if (timeLeft > 0) playSound('tick');
+                }
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    playSound('wrong');
+                    handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function handleTimeOut() {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            lives -= 1;
+            updateLives();
+
+            const aContainer = document.getElementById('answer-container');
+            if (aContainer) aContainer.classList.add('shake');
+            
+            setTimeout(() => {
+                if (aContainer) aContainer.classList.remove('shake');
+                if (lives <= 0) {
+                    endGame(false);
+                } else {
+                    nextLevel();
+                }
+            }, 800);
+        }
+
+        function formatDigital(h, m) {
+            let displayH = h === 0 ? 12 : (h > 12 ? h - 12 : h);
+            let displayM = m < 10 ? `0${m}` : m;
+            return `${displayH}:${displayM}`;
+        }
+
+        function generateRandomTime(minDivisor = 5) {
+            const h = Math.floor(Math.random() * 12) + 1;
+            const mSteps = 60 / minDivisor;
+            const m = Math.floor(Math.random() * mSteps) * minDivisor;
+            return { h, m };
+        }
+
+        function loadQuestion() {
+            if (lives <= 0) {
+                endGame();
+                return;
+            }
+
+            const qBoard = document.getElementById('question-board');
+            const qContainer = document.getElementById('question-container');
+            const aContainer = document.getElementById('answer-container');
+            const qText = document.getElementById('question-text');
+            
+            qBoard.classList.remove('slide-out-left', 'hidden', 'slide-in-right');
+            aContainer.classList.remove('slide-out-left', 'slide-in-right');
+            
+            const levelConfig = levels[currentLevel % levels.length];
+            
+            qContainer.innerHTML = '';
+            aContainer.innerHTML = '';
+
+            let timeData = generateRandomTime(levelConfig.minDivisor || 5);
+            
+            if (levelConfig.type === 'which') {
+                // "Which Clock Shows X?"
+                qText.innerText = `Which clock shows ${formatDigital(timeData.h, timeData.m)}?`;
+                correctAnswer = 'correct';
+                
+                qBoard.classList.add('hidden'); // Hide the white board
+                
+                aContainer.className = "w-full max-w-5xl mx-auto grid grid-cols-2 gap-4 md:gap-8 z-20 flex-grow items-center content-center pb-10 px-2";
+                
+                let optionsData = [{...timeData, correct: true}];
+                while(optionsData.length < 4) {
+                    let w = generateRandomTime(levelConfig.minDivisor);
+                    if (!optionsData.some(o => o.h === w.h && o.m === w.m)) {
+                        w.correct = false;
+                        optionsData.push(w);
+                    }
+                }
+                optionsData.sort(() => Math.random() - 0.5);
+
+                optionsData.forEach((opt, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-clock-card p-2 md:p-4 flex justify-center items-center w-full aspect-square group pop-button';
+                    btn.style.animationDelay = `${index * 0.1}s`; // Staggered pop in
+                    btn.innerHTML = createClockSVG(opt.h, opt.m, '100%', 'w-full max-w-[350px] aspect-square group-hover:scale-105 transition-transform duration-300');
+                    
+                    // Clean up animation class so tailwind hover scales work again
+                    btn.addEventListener('animationend', () => {
+                        btn.classList.remove('pop-button');
+                        btn.style.animationDelay = '';
+                    });
+
+                    btn.onclick = () => handleAnswer(opt.correct ? 'correct' : 'wrong', btn);
+                    aContainer.appendChild(btn);
+                });
+
+            } else if (levelConfig.type === 'duration') {
+                // "How many minutes passed?"
+                qText.innerText = levelConfig.title;
+                qBoard.classList.remove('hidden');
+                qBoard.classList.add('slide-in-right');
+                aContainer.className = "w-full max-w-4xl mx-auto grid grid-cols-2 gap-4 md:gap-8 z-20 px-2 pb-10";
+
+                const durations = [15, 30, 45, 60];
+                const duration = durations[Math.floor(Math.random() * durations.length)];
+                correctAnswer = `${duration} min`;
+                
+                let m2 = timeData.m + duration;
+                let h2 = timeData.h;
+                if (m2 >= 60) {
+                    m2 -= 60;
+                    h2 += 1;
+                    if(h2 > 12) h2 = 1;
+                }
+
+                qContainer.innerHTML = `
+                    <div class="flex items-center justify-between w-full px-2 md:px-8">
+                        <div class="flex flex-col items-center flex-1">
+                            <span class="text-xl md:text-2xl font-black text-gray-500 mb-2 md:mb-4 bg-gray-100 rounded-full px-6 py-2">Start</span>
+                            ${createClockSVG(timeData.h, timeData.m, '100%', 'max-w-[200px] md:max-w-[280px] w-full aspect-square')}
+                        </div>
+                        <div class="text-5xl md:text-8xl font-black text-blue-400 mx-2 md:mx-8 drop-shadow-md">➔</div>
+                        <div class="flex flex-col items-center flex-1">
+                            <span class="text-xl md:text-2xl font-black text-gray-500 mb-2 md:mb-4 bg-gray-100 rounded-full px-6 py-2">End</span>
+                            ${createClockSVG(h2, m2, '100%', 'max-w-[200px] md:max-w-[280px] w-full aspect-square')}
+                        </div>
+                    </div>
+                `;
+
+                let options = [correctAnswer];
+                while(options.length < 4) {
+                    let wDuration = durations[Math.floor(Math.random() * durations.length)];
+                    if(Math.random() > 0.5) wDuration += 5;
+                    let wrongStr = `${wDuration} min`;
+                    if (!options.includes(wrongStr)) options.push(wrongStr);
+                }
+                options.sort(() => Math.random() - 0.5);
+
+                options.forEach((opt, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-premium btn-yellow py-5 md:py-6 text-3xl md:text-4xl rounded-3xl w-full pop-button';
+                    btn.style.animationDelay = `${index * 0.1}s`;
+                    btn.innerText = opt;
+                    
+                    btn.addEventListener('animationend', () => {
+                        btn.classList.remove('pop-button');
+                        btn.style.animationDelay = '';
+                    });
+
+                    btn.onclick = () => handleAnswer(opt, btn);
+                    aContainer.appendChild(btn);
+                });
+            } else {
+                // "What time is it?"
+                qText.innerText = levelConfig.title;
+                qBoard.classList.remove('hidden');
+                qBoard.classList.add('slide-in-right');
+                aContainer.className = "w-full max-w-4xl mx-auto grid grid-cols-2 gap-4 md:gap-8 z-20 px-2 pb-10";
+
+                correctAnswer = formatDigital(timeData.h, timeData.m);
+                // MASSIVE CLOCK for Read mode
+                qContainer.innerHTML = createClockSVG(timeData.h, timeData.m, '100%', 'max-w-[400px] md:max-w-[500px] w-full aspect-square mx-auto');
+                
+                let options = [correctAnswer];
+                while(options.length < 4) {
+                    let wrongTime = generateRandomTime(levelConfig.minDivisor);
+                    let wrongStr = formatDigital(wrongTime.h, wrongTime.m);
+                    if (!options.includes(wrongStr)) options.push(wrongStr);
+                }
+                options.sort(() => Math.random() - 0.5);
+
+                options.forEach((opt, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-premium btn-blue py-5 md:py-6 text-4xl md:text-5xl rounded-3xl w-full tracking-widest pop-button';
+                    btn.style.animationDelay = `${index * 0.1}s`;
+                    btn.innerText = opt;
+                    
+                    btn.addEventListener('animationend', () => {
+                        btn.classList.remove('pop-button');
+                        btn.style.animationDelay = '';
+                    });
+
+                    btn.onclick = () => handleAnswer(opt, btn);
+                    aContainer.appendChild(btn);
+                });
+            }
+
+            startTimer();
+        }
+
+        function handleAnswer(selected, buttonElement) {
+            if (isAnimating) return;
+            isAnimating = true;
+            stopTimer();
+
+            const isCorrect = selected === correctAnswer;
+            const isClockCard = buttonElement.classList.contains('btn-clock-card');
+            
+            const originalClass = buttonElement.className;
+            const originalShadow = buttonElement.style.boxShadow;
+
+            if (isCorrect) {
+                playSound('correct');
+                if (isClockCard) {
+                    buttonElement.className = 'btn-clock-card p-2 md:p-4 flex justify-center items-center w-full aspect-square z-30 scale-105 border-green-400 bg-green-50';
+                    buttonElement.style.boxShadow = '0 0px 0 transparent, 0 0px 40px rgba(34, 197, 94, 0.8)';
+                } else {
+                    buttonElement.className = 'btn-premium btn-green flex justify-center items-center rounded-3xl w-full z-30 scale-105 py-6 text-4xl md:text-5xl tracking-widest';
+                    buttonElement.style.boxShadow = '0 0px 0 transparent, 0 0px 40px rgba(34, 197, 94, 0.6)';
+                }
+                
+                score += 10;
+                document.getElementById('score-display').innerText = score;
+                
+                confetti({
+                    particleCount: 200,
+                    spread: 100,
+                    origin: { y: 0.5 },
+                    colors: ['#10b981', '#3b82f6', '#f59e0b', '#fbbf24', '#f472b6']
+                });
+
+                setTimeout(() => nextLevel(), 1200);
+            } else {
+                playSound('wrong');
+                if (isClockCard) {
+                    buttonElement.className = 'btn-clock-card shake p-2 md:p-4 flex justify-center items-center w-full aspect-square z-30 border-red-400 bg-red-50';
+                    buttonElement.style.boxShadow = '0 0px 0 transparent, 0 5px 10px rgba(0,0,0,0.2)'; 
+                } else {
+                    buttonElement.className = 'btn-premium btn-red shake flex justify-center items-center rounded-3xl w-full z-30 py-6 text-4xl md:text-5xl tracking-widest';
+                    buttonElement.style.boxShadow = '0 0px 0 transparent, 0 5px 10px rgba(0,0,0,0.2)'; 
+                }
+                
+                lives -= 1;
+                updateLives();
+
+                setTimeout(() => {
+                    buttonElement.className = originalClass;
+                    buttonElement.style.boxShadow = originalShadow;
+                    
+                    if (lives <= 0) {
+                        endGame(false);
+                    } else {
+                        isAnimating = false;
+                    }
+                }, 600);
+            }
+        }
+
+        function updateLives() {
+            let hearts = '';
+            for(let i=0; i<lives; i++) hearts += '❤️';
+            for(let i=lives; i<3; i++) hearts += '🖤';
+            document.getElementById('lives-display').innerHTML = hearts;
+        }
+
+        function nextLevel() {
+            const qBoard = document.getElementById('question-board');
+            const aContainer = document.getElementById('answer-container');
+            
+            if(!qBoard.classList.contains('hidden')) {
+                qBoard.classList.remove('slide-in-right');
+                qBoard.classList.add('slide-out-left');
+            }
+            
+            aContainer.classList.remove('slide-in-right');
+            aContainer.classList.add('slide-out-left');
+
+            setTimeout(() => {
+                currentLevel++;
+                
+                if (currentLevel >= maxQuestions) {
+                    endGame(true);
+                    return;
+                }
+                
+                document.getElementById('stage-display').innerText = currentLevel + 1;
+                isAnimating = false;
+                loadQuestion();
+            }, 400);
+        }
+
+        function startGame(mode = 'easy') {
+            playSound('click');
+            difficultyMode = mode;
+            document.getElementById('start-screen').classList.add('hidden');
+            
+            document.getElementById('game-title-display').classList.remove('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('hud').classList.add('flex');
+            
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            document.getElementById('player-name-display').innerText = playerName;
+            document.getElementById('player-avatar-display').innerText = playerIcon;
+
+            score = 0;
+            currentLevel = 0;
+            lives = 3;
+            document.getElementById('score-display').innerText = score;
+            document.getElementById('stage-display').innerText = currentLevel + 1;
+            updateLives();
+            
+            isAnimating = false;
+            loadQuestion();
+        }
+
+        function endGame(isVictory = false) {
+            stopTimer();
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('game-title-display').classList.add('hidden');
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('hud').classList.remove('flex');
+            
+            const endScreen = document.getElementById('end-screen');
+            endScreen.classList.remove('hidden');
+            endScreen.classList.add('pop-in');
+            
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('end-avatar').innerText = playerIcon;
+            document.getElementById('end-player-name').innerText = playerName + "!";
+            
+            const badge = document.getElementById('new-record-badge');
+            const bestScoreDisplay = document.getElementById('end-best-score');
+            const bestScoreLabel = document.getElementById('best-score-label');
+            
+            if (score > bestScore && score > 0) {
+                // Show the old record they just beat
+                bestScoreDisplay.innerText = bestScore;
+                bestScoreLabel.innerText = "Previous Best:";
+                bestScore = score; // Now update it in memory for the next game
+                badge.classList.remove('hidden');
+            } else {
+                // Show the record they need to aim for next time
+                bestScoreDisplay.innerText = bestScore;
+                bestScoreLabel.innerText = "Target to Beat:";
+                badge.classList.add('hidden');
+            }
+            
+            let title = document.getElementById('end-title');
+            if (isVictory) {
+                playSound('win');
+                title.innerText = "Awesome Job!";
+                title.className = "text-3xl md:text-4xl font-black text-green-500 mb-2 uppercase tracking-widest drop-shadow-sm";
+                confetti({ particleCount: 400, spread: 160, origin: { y: 0.3 }, colors: ['#10b981', '#3b82f6', '#facc15', '#f472b6'] });
+            } else {
+                playSound('lose');
+                if (lives <= 0) {
+                    title.innerText = "Out of Lives!";
+                } else {
+                    title.innerText = "Time's Up!";
+                }
+                title.className = "text-3xl md:text-4xl font-black text-red-500 mb-2 uppercase tracking-widest drop-shadow-sm";
+            }
+        }
+
+        function resetGame() {
+            playSound('click');
+            document.getElementById('end-screen').classList.add('hidden');
+            startGame(difficultyMode); 
+        }
+        
+    </script>
+</body>
+</html>
